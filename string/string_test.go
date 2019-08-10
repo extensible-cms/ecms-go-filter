@@ -49,4 +49,3 @@ func TestTrim(t *testing.T) {
 		})
 	}
 }
-
