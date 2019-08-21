@@ -4,7 +4,7 @@ import (
 	"strings"
 )
 
-func ToLowerCase(xs interface{}) interface{} {
+func LowerCase(xs interface{}) interface{} {
 	return strings.ToLower(xs.(string))
 }
 

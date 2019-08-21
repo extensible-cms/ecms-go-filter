@@ -17,16 +17,16 @@ func ExpectEqual(tx *testing.T, a interface{}, b interface{}) {
 	}
 }
 
-func TestToLowerCase(t *testing.T) {
+func TestLowerCase(t *testing.T) {
 	for _, tc := range []testCaseForString{
 		{Value: "ABC", Expected: "abc"},
 		{Value: "aEiOu", Expected: "aeiou"},
 		{Value: "AeIoU", Expected: "aeiou"},
 		{Value: "aeiou", Expected: "aeiou"},
 	} {
-		testName := fmt.Sprintf("ToLowerCase(%v) === %v", tc.Value, tc.Expected)
+		testName := fmt.Sprintf("LowerCase(%v) === %v", tc.Value, tc.Expected)
 		t.Run(testName, func(t2 *testing.T) {
-			result := ToLowerCase(tc.Value)
+			result := LowerCase(tc.Value)
 			ExpectEqual(t2, result, tc.Expected)
 		})
 	}
