@@ -16,7 +16,11 @@ func TestToBool(t *testing.T) {
 		Value    interface{}
 		Expected bool
 	}
+
+	// Gather test cases here
 	testCases := make([]testCaseForBoolean, 0)
+
+	// Falsy test cases
 	for _, x := range []interface{}{"", 0, false, []interface{}{}} {
 		testCases = append(testCases, testCaseForBoolean{
 			Value:    x,
@@ -24,6 +28,7 @@ func TestToBool(t *testing.T) {
 		})
 	}
 
+	// Truthy test cases
 	for _, x := range []interface{}{"true", 1, true} {
 		testCases = append(testCases, testCaseForBoolean{
 			Value:    x,
@@ -31,6 +36,7 @@ func TestToBool(t *testing.T) {
 		})
 	}
 
+	// Run test cases
 	for _, tc := range testCases {
 		testName := fmt.Sprintf("ToBool(%v) === `%v`", tc.Value, tc.Expected)
 		t.Run(testName, func(t2 *testing.T) {
