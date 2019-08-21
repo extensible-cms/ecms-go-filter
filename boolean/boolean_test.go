@@ -11,7 +11,7 @@ func ExpectEqual(tx *testing.T, a interface{}, b interface{}) {
 	}
 }
 
-func TestToBoolean(t *testing.T) {
+func TestToBool(t *testing.T) {
 	type testCaseForBoolean struct {
 		Value    interface{}
 		Expected bool
@@ -34,7 +34,7 @@ func TestToBoolean(t *testing.T) {
 	for _, tc := range testCases {
 		testName := fmt.Sprintf("ToBool(%v) === `%v`", tc.Value, tc.Expected)
 		t.Run(testName, func(t2 *testing.T) {
-			ExpectEqual(t2, boolean.ToBoolean(tc.Value), tc.Expected)
+			ExpectEqual(t2, ToBool(tc.Value), tc.Expected)
 		})
 	}
 }
