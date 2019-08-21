@@ -6,37 +6,20 @@ import (
 	"strings"
 )
 
-// @todo copy from fjl-filter implementation
+// @note Prior art: fjl-filter
 // https://github.com/functional-jslib/fjl-filter/blob/master/src/BooleanFilter.js
 
-type BoolFilterOptions struct {
-	AllowCasting    bool
-	Translations    map[string]string
-	ConversionRules []string
-}
-
-func NewOptions() *BoolFilterOptions {
-	return &BoolFilterOptions{
-		AllowCasting:    true,
-		Translations:    nil,
-		ConversionRules: nil,
-	}
-}
-
-func New(ops *BoolFilterOptions) ecmsGoFilter.Filter {
+func GetBoolFilter(allowCasting bool, conversionRules []string) ecmsGoFilter.Filter {
 	return func(x interface{}) interface{} {
 		switch x.(type) {
 		case bool:
 			return x
 		}
-		if !ops.AllowCasting {
+		if !allowCasting {
 			return x
 		}
-		if ops == nil {
-			return castByNative(x)
-		}
-		if len(ops.ConversionRules) > 0 {
-			return castByValue(x, ops)
+		if len(conversionRules) > 0 {
+			return castByValue(x, conversionRules)
 		}
 		return castByNative(x)
 	}
@@ -52,11 +35,11 @@ func castByNative(x interface{}) interface{} {
 	return !is.Empty(x)
 }
 
-func castByValue(x interface{}, ops *BoolFilterOptions) interface{} {
-	if len(ops.ConversionRules) == 0 {
+func castByValue(x interface{}, conversionRules []string) interface{} {
+	if len(conversionRules) == 0 {
 		return castByNative(x)
 	}
-	ruleFunctions := getConversionRules(ops.ConversionRules)
+	ruleFunctions := getConversionRules(conversionRules)
 	for _, f := range ruleFunctions {
 		result := f(x)
 		switch result.(type) {
@@ -107,7 +90,7 @@ func GetTranslationsCaster(translations map[string]bool) ecmsGoFilter.Filter {
 			return nil
 		}
 		lowerCasedStr := strings.ToLower(string(bs))
-		for k, _ := range translations {
+		for k := range translations {
 			if strings.ToLower(k) == lowerCasedStr {
 				return translations[k]
 			}
@@ -118,18 +101,25 @@ func GetTranslationsCaster(translations map[string]bool) ecmsGoFilter.Filter {
 
 var (
 	defaultTranslation = map[string]bool{
-		"yes": true,
-		"no": false,
+		"":          false,
+		"yes":       true,
+		"no":        false,
+		"true":      true,
+		"false":     false,
 		"undefined": false,
-		"nil": false,
-		"null": false,
-		"0": false,
-		"0.0": false,
+		"nil":       false,
+		"null":      false,
+		"1":         true,
+		"0":         false,
+		"1.0":       true,
+		"0.0":       false,
+		"{}":        false,
+		"[]":        false,
 	}
 	castByTranslations = GetTranslationsCaster(defaultTranslation)
-	castingRules = map[string]ecmsGoFilter.Filter{
-		"native":       castByNative, 		// handles casting all value types
+	castingRules       = map[string]ecmsGoFilter.Filter{
+		"native":       castByNative,       // handles casting all value types
 		"translations": castByTranslations, // default translations caster
 	}
-	ToBool ecmsGoFilter.Filter = New(NewOptions())
+	ToBool = GetBoolFilter(true, nil)
 )
