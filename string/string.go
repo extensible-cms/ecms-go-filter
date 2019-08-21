@@ -13,7 +13,7 @@ func Trim(xs interface{}) interface{} {
 }
 
 var (
-	xmlEntitiesCharMap map[byte][]byte = map[byte][]byte{
+	xmlEntitiesCharMap = map[byte][]byte{
 		'<':  []byte("&lt;"),
 		'>':  []byte("&gt;"),
 		'"':  []byte("&quot;"),
