@@ -80,13 +80,8 @@ func getConversionRules(conversionRules []string) []ecmsGoFilter.Filter {
 
 func GetTranslationsCaster(translations map[string]bool) ecmsGoFilter.Filter {
 	return func(x interface{}) interface{} {
-		var bs []byte
-		switch x.(type) {
-		case string:
-			bs = []byte(x.(string))
-		case []byte:
-			bs = x.([]byte)
-		default:
+		bs := ecmsGoFilter.ToByteString(x)
+		if bs == nil {
 			return nil
 		}
 		lowerCasedStr := strings.ToLower(string(bs))
@@ -95,7 +90,7 @@ func GetTranslationsCaster(translations map[string]bool) ecmsGoFilter.Filter {
 				return translations[k]
 			}
 		}
-		return false
+		return nil
 	}
 }
 

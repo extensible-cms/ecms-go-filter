@@ -9,13 +9,8 @@ import (
 //  and replacement passed in.
 func GetPatternFilter(pattern *regexp.Regexp, replacement []byte) ecmsGoFilter.Filter {
 	return func(x interface{}) interface{} {
-		var bs []byte
-		switch x.(type) {
-		case string:
-			bs = []byte(x.(string))
-		case []byte:
-			bs = x.([]byte)
-		default:
+		bs := ecmsGoFilter.ToByteString(x)
+		if bs == nil {
 			return x
 		}
 		return pattern.ReplaceAll(bs, replacement)
@@ -23,7 +18,7 @@ func GetPatternFilter(pattern *regexp.Regexp, replacement []byte) ecmsGoFilter.F
 }
 
 var (
-	slugRegex = regexp.MustCompile("[^a-z\\-_\\d]")
+	slugRegex       = regexp.MustCompile("[^a-z\\-_\\d]")
 	slugReplacement = []byte("-")
 
 	// Slug filter takes a string or byte string and filters it using given pattern

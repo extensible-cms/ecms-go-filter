@@ -1,6 +1,7 @@
 package string
 
 import (
+	ecmsGoFilter "github.com/extensible-cms/ecms-go-filter"
 	"strings"
 )
 
@@ -23,15 +24,8 @@ var (
 )
 
 func XmlEntities(x interface{}) interface{} {
-	var bs []byte
-	switch x.(type) {
-	case string:
-		bs = []byte(x.(string))
-	case []byte:
-		bs = x.([]byte)
-	case byte:
-		bs = []byte{x.(byte)}
-	default:
+	bs := ecmsGoFilter.ToByteString(x)
+	if bs == nil {
 		return x
 	}
 	var out []byte
