@@ -150,7 +150,7 @@ func GetStripHtmlTagsFilter(tagNames [][]byte) ecmsGoFilter.Filter {
 }
 
 func GetStripHtmlAttribsFilter(attribNames [][]byte) ecmsGoFilter.Filter {
-	namesAreValid, _ /*invalidNames*/ := validateNames(attribNames)
+	namesAreValid, _ := validateNames(attribNames)
 	if !namesAreValid {
 		// @todo add invalid attrib names to error
 		panic(InvalidAttribNameError)
