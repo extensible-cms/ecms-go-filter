@@ -11,7 +11,9 @@ import (
 // https://github.com/functional-jslib/fjl-filter/blob/master/src/StripTagsFilter.js
 
 var (
-	blankSep = []byte("")
+	emptySep = []byte("")
+
+	whitespace = []byte("\\s")
 
 	// Character allowed for start of tag or html attribute name
 	nameStartCharHexRanges = [][]byte{
@@ -37,7 +39,7 @@ var (
 
 	nameStartCharPartial = bytes.Join(
 		append(nameStartCharHexRanges, []byte(":_a-zA-Z")),
-		[]byte(""),
+		emptySep,
 	)
 
 	nameCharPartial = bytes.Join(
@@ -48,31 +50,33 @@ var (
 			},
 			nameCharHexRanges...,
 		),
-		blankSep,
+		emptySep,
 	)
 
 	namePartial = bytes.Join([][]byte{
 		[]byte("["), nameStartCharPartial, []byte("]"),
 		[]byte("["), nameCharPartial, []byte("]*"),
-	}, blankSep)
+	}, emptySep)
 
 	eqPartial = []byte("\\s?=\\s?")
 
-	multiLineSpacePartial = []byte("[\\n\\r\\t\\s]*")
+	quotePartial = []byte("\"")
 
-	attrValuePartial = []byte("[^(?\\\")]*")
+	optionalWhitespace = []byte("[\\s]*")
 
-	attrPartial = bytes.Join([][]byte{namePartial, eqPartial, attrValuePartial}, blankSep)
+	attrValuePartial = []byte("[^(?\\\")]*") // @todo make this more robust
+
+	attrPartial = bytes.Join([][]byte{namePartial, eqPartial, quotePartial, attrValuePartial, quotePartial}, emptySep)
 
 	commentPartial = bytes.Join(
 		[][]byte{
 			[]byte("<!--"),
-			multiLineSpacePartial,
+			optionalWhitespace,
 			[]byte("(?m:.+)"),
-			multiLineSpacePartial,
+			optionalWhitespace,
 			[]byte("-->"),
 		},
-		blankSep,
+		emptySep,
 	)
 
 	commentRegex = regexp.MustCompile(string(commentPartial))
@@ -82,7 +86,7 @@ var (
 	InvalidXmlTagNameError = errors.New("invalid xml tag name")
 
 	InvalidAttribNameError = errors.New("invalid xml attribute name")
-) // var declarations
+)
 
 func validateName(xs []byte) bool {
 	return tagNameRegex.Match(xs)
@@ -105,24 +109,26 @@ func createTagRegexPartial(tagName []byte) []byte {
 	return bytes.Join(
 		[][]byte{
 			[]byte("(<\\/?("), tagName, []byte(")(?:"),
-			multiLineSpacePartial, attrPartial,
+			optionalWhitespace, attrPartial,
 			[]byte(")*"),
-			multiLineSpacePartial,
+			optionalWhitespace,
 			[]byte(">)*"),
 		},
-		blankSep,
+		emptySep,
 	)
 }
 
 func createAttribRegexPartial(attribName []byte) []byte {
 	return bytes.Join(
 		[][]byte{
-			multiLineSpacePartial,
-			[]byte("("),
+			whitespace,
 			attribName,
-			[]byte(")"),
+			eqPartial,
+			quotePartial,
+			attrValuePartial,
+			quotePartial,
 		},
-		blankSep,
+		emptySep,
 	)
 }
 
@@ -143,13 +149,13 @@ func GetStripHtmlTags(tagNames [][]byte) ecmsGoFilter.Filter {
 		out := bs
 		for _, tn := range tagNames {
 			regex := regexp.MustCompile(string(createTagRegexPartial(tn)))
-			out = regex.ReplaceAll(out, blankSep)
+			out = regex.ReplaceAll(out, emptySep)
 		}
 		return out
 	}
 }
 
-func GetStripHtmlAttribs(attribNames [][]byte) ecmsGoFilter.Filter {
+func GetStripPopulatedHtmlAttribs(attribNames [][]byte) ecmsGoFilter.Filter {
 	namesAreValid, _ := validateNames(attribNames)
 	if !namesAreValid {
 		// @todo add invalid attrib names to error
@@ -166,7 +172,7 @@ func GetStripHtmlAttribs(attribNames [][]byte) ecmsGoFilter.Filter {
 		out := bs
 		for _, tn := range attribNames {
 			regex := regexp.MustCompile(string(createAttribRegexPartial(tn)))
-			out = regex.ReplaceAll(out, blankSep)
+			out = regex.ReplaceAll(out, emptySep)
 		}
 		return out
 	}
@@ -177,5 +183,5 @@ func StripHtmlComments(x interface{}) interface{} {
 	if bs == nil {
 		return x
 	}
-	return commentRegex.ReplaceAll(bs, blankSep)
+	return commentRegex.ReplaceAll(bs, emptySep)
 }
