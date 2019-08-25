@@ -167,7 +167,7 @@ func GetStripPopulatedHtmlAttribs(attribNames [][]byte) ecmsGoFilter.Filter {
 	return func(x interface{}) interface{} {
 		bs := ecmsGoFilter.ToByteString(x)
 		if bs == nil {
-			return x
+			return []byte{}
 		}
 		out := bs
 		for _, tn := range attribNames {

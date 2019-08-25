@@ -30,7 +30,7 @@ func init() {
 	}
 }
 
-func TestGetStripHtmlTagsFilter(t *testing.T) {
+func TestGetStripHtmlTags(t *testing.T) {
 	// table-lize this suite
 	for _, tagName := range nameSubSequences {
 		openTag := fmt.Sprintf("<%s>", tagName)
@@ -83,18 +83,19 @@ func TestGetStripPopulatedHtmlAttribs(t *testing.T) {
 	for _, name := range nameSubSequences {
 		n := string(name)
 		randomContent := "random content"
+		attribWithRandom := n + "=\"" + randomContent + "\""
+		attribWithSelf := n + "=\"" + n + "\""
 		cases := map[string]string{
 			// Self defining attributes (for now) will be ignored
 			//"<div " + n + ">":                                           "<div>",
 			//"<div " + n + " class=\"hello\">":                           "<div class=\"hello\">",
-			"<div " + n + "=\"" + n + "\">":                             "<div>",
-			"<div " + n + "=\"" + n + "\" class=\"hello\">":             "<div class=\"hello\">",
-			"<div " + n + "=\"" + randomContent + "\" class=\"hello\">": "<div class=\"hello\">",
-			"<div " + n + "=\"" + randomContent + "\">":                 "<div>",
-			"<div " + n + "=\"" + n + "\">":                             "<div>",
-			"<div class=\"" + n + "\">":                                 "<div class=\"" + n + "\">",
-			" ":                                                         " ",
-			"":                                                          "",
+			"<div " + attribWithSelf + ">":                                            "<div>",
+			"<div " + attribWithSelf + " class=\"hello\">":                            "<div class=\"hello\">",
+			"<div " + attribWithRandom + " class=\"hello\" " + attribWithRandom + ">": "<div class=\"hello\">",
+			"<div class=\"hello\" " + attribWithRandom + " data-hello=\"hello\">":     "<div class=\"hello\" data-hello=\"hello\">",
+			"<div class=\"" + n + "\">":                                               "<div class=\"" + n + "\">",
+			"":                                                                        "",
+			// @todo add json value case
 		}
 		testCases = append(testCases, testCase{
 			cases: cases,
