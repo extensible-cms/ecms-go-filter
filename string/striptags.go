@@ -7,7 +7,7 @@ import (
 	"regexp"
 )
 
-// @todo copy implementation from fjl-filter
+// @note prior art:
 // https://github.com/functional-jslib/fjl-filter/blob/master/src/StripTagsFilter.js
 
 var (
@@ -66,7 +66,11 @@ var (
 
 	attrValuePartial = []byte("[^(?\\\")]*") // @todo make this more robust
 
-	attrPartial = bytes.Join([][]byte{namePartial, eqPartial, quotePartial, attrValuePartial, quotePartial}, emptySep)
+	attrPartial = bytes.Join([][]byte{
+		namePartial, eqPartial, quotePartial, attrValuePartial, quotePartial,
+	},
+		emptySep,
+	)
 
 	commentPartial = bytes.Join(
 		[][]byte{
@@ -108,11 +112,11 @@ func validateNames(xss [][]byte) (bool, [][]byte) {
 func createTagRegexPartial(tagName []byte) []byte {
 	return bytes.Join(
 		[][]byte{
-			[]byte("(<\\/?("), tagName, []byte(")(?:"),
+			[]byte("<(?:\\/\\s*)?"), tagName, []byte("(?:"),
 			optionalWhitespace, attrPartial,
 			[]byte(")*"),
 			optionalWhitespace,
-			[]byte(">)*"),
+			[]byte(">"),
 		},
 		emptySep,
 	)

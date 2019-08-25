@@ -31,7 +31,10 @@ func init() {
 }
 
 func TestGetStripHtmlTags(t *testing.T) {
-	// table-lize this suite
+	// @todo table-lize this suite
+	// @todo add self closing tag case
+	// @todo add case with self closing tag containing multiple attribs
+	// @todo add case with opening tag containing multiple attribs
 	for _, tagName := range nameSubSequences {
 		openTag := fmt.Sprintf("<%s>", tagName)
 		closeTag := fmt.Sprintf("</%s>", tagName)
