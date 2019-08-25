@@ -126,7 +126,7 @@ func createAttribRegexPartial(attribName []byte) []byte {
 	)
 }
 
-func GetStripHtmlTagsFilter(tagNames [][]byte) ecmsGoFilter.Filter {
+func GetStripHtmlTags(tagNames [][]byte) ecmsGoFilter.Filter {
 	namesAreValid, _ /*invalidNames*/ := validateNames(tagNames)
 	if !namesAreValid {
 		// @todo add invalid tag names to error
@@ -149,7 +149,7 @@ func GetStripHtmlTagsFilter(tagNames [][]byte) ecmsGoFilter.Filter {
 	}
 }
 
-func GetStripHtmlAttribsFilter(attribNames [][]byte) ecmsGoFilter.Filter {
+func GetStripHtmlAttribs(attribNames [][]byte) ecmsGoFilter.Filter {
 	namesAreValid, _ := validateNames(attribNames)
 	if !namesAreValid {
 		// @todo add invalid attrib names to error

@@ -5,7 +5,7 @@ import (
 	"regexp"
 )
 
-// GetPatternFilter returns a filter that filters strings and byte-strings using pattern
+// GetPatternFilter returns a filter that filters strings and bytes-strings using pattern
 //  and replacement passed in.
 func GetPatternFilter(pattern *regexp.Regexp, replacement []byte) ecmsGoFilter.Filter {
 	return func(x interface{}) interface{} {
@@ -21,6 +21,6 @@ var (
 	slugRegex       = regexp.MustCompile("[^a-z\\-_\\d]")
 	slugReplacement = []byte("-")
 
-	// Slug filter takes a string or byte string and filters it using given pattern
+	// Slug filter takes a string or bytes string and filters it using given pattern
 	Slug ecmsGoFilter.Filter = GetPatternFilter(slugRegex, slugReplacement)
 )

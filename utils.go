@@ -19,6 +19,7 @@ func ToByteString(x interface{}) []byte {
 	}
 }
 
+// @todo update `StrSubSequences` to use bytes strings instead
 func StrSubSequences(xs string) []string {
 	listLen := uint(len(xs))
 	subSeqLen := uint(math.Pow(2.0, float64(listLen)))
@@ -38,6 +39,7 @@ func StrSubSequences(xs string) []string {
 	}
 	return out
 }
+
 
 func StrSliceSubSequences(xss []string) [][]string {
 	listLen := uint(len(xss))

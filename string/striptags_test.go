@@ -1,57 +1,62 @@
 package string
 
 import (
+	"bytes"
 	"fmt"
 	ecmsGoFilter "github.com/extensible-cms/ecms-go-filter"
-	"math/rand"
+	bytes2 "github.com/extensible-cms/ecms-go-filter/bytes"
 	"strings"
 	"testing"
 )
 
-func genRanChar() rune {
-	return rand.Int31n(0x10FFFF)
-}
-
-func genRanRunes(max int32) []rune {
-	var (
-		s     []rune
-		i     int32
-		limit = rand.Int31n(max)
-	)
-	for i = 0; i < limit; i += 1 {
-		s = append(s, genRanChar())
-	}
-	return s
-}
-
 func TestGetStripHtmlTagsFilter(t *testing.T) {
-	for _, tagName := range ecmsGoFilter.StrSubSequences("abc_-:") { // subsequences for valid html symbol names
-		if len(tagName) == 0 || strings.Index(tagName, "-") == 0 || // skip on tagNames starting with non-alpha-char
-			strings.Index(tagName, "_") == 0 || strings.Index(tagName, ":") == 0 {
+	for _, tagName := range bytes2.SubSequences([]byte("a-b_c:d")) { // subsequences for valid html symbol names
+		tagNameLastInd := len(tagName) - 1
+		if len(tagName) == 0 ||
+			bytes.Index(tagName, []byte{'-'}) == 0 || // skip on tagNames starting with non-alpha-char
+			bytes.Index(tagName, []byte{'_'}) == 0 || // ""
+			bytes.Index(tagName, []byte{':'}) == 0 || // ""
+			bytes.Index(tagName, []byte{'-'}) == tagNameLastInd ||
+			bytes.Index(tagName, []byte{'_'}) == tagNameLastInd ||
+			bytes.Index(tagName, []byte{':'}) == tagNameLastInd {
 			continue
 		}
-		startTag := fmt.Sprintf("<%v>", tagName)
-		closeTag := fmt.Sprintf("</%v>", tagName)
-		randomContent := string(genRanRunes(100))
+
+		openTag := fmt.Sprintf("<%s>", tagName)
+		closeTag := fmt.Sprintf("</%s>", tagName)
+		randomContent := "random content"
+
+		// Random orderings of start, close and content nodes for our markup
 		htmlCases := ecmsGoFilter.StrSliceSubSequences([]string{
-			startTag, closeTag, randomContent,
+			openTag, closeTag, randomContent,
 		})
 
 		for _, htmlCase := range htmlCases {
 			joinedHtml := strings.Join(htmlCase, "")
-			testName := fmt.Sprintf("GetStripHtmlTags(%v)(%v)",
+			testName := fmt.Sprintf("GetStripHtmlTags(%s)(%s)",
 				tagName, joinedHtml,
 			)
+
 			t.Run(testName, func(t2 *testing.T) {
-				f := GetStripHtmlTagsFilter([][]byte{[]byte(tagName)})
+				f := GetStripHtmlTags([][]byte{tagName})
 				result := f(joinedHtml)
-				for _, htmlTag := range []string{startTag, closeTag} {
-					if strings.Index(string(result.([]byte)), htmlTag) >= 0 {
-						t2.Errorf("@todo add error message here")
+
+				t2.Run("Expect `Filter` function", func(t3 *testing.T) {
+					if f == nil {
+						t3.Error("Expected a function;  Received `nil`")
 					}
-				}
-			})
+				})
+
+				t2.Run(fmt.Sprintf("Expect tags %s, %s removed", openTag, closeTag), func(t3 *testing.T) {
+					for _, htmlTag := range []string{openTag, closeTag} {
+						if bytes.Index(result.([]byte), []byte(htmlTag)) >= 0 {
+							t2.Errorf("Expected result not to contain removed tag %s;  Received %s", htmlTag, result)
+						}
+					}
+				})
+
+			}) // html cases loop
 		}
-	}
-	//result := GetStripHtmlTagsFilter([][]byte{[]byte(tagName)})
+
+	} // test cases loop
 }
