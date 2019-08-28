@@ -31,10 +31,58 @@ func init() {
 }
 
 func TestGetStripHtmlTags(t *testing.T) {
+	type testCase struct {
+		cases map[string]string
+		names [][]byte
+	}
+
+	testCases := make([]testCase, 0)
+
+	makeHtmlStr := func(s string) string {
+		return fmt.Sprintf(
+			"<!DOCTYPE html><html><head><title>Random Markup</title></head><body>%v</body></html>", s,
+		)
+	}
+
+	randomHtmlContent := ""
+
+	for _, tagName := range []string{"a", "b", "p", "i"} {
+		randomHtmlContent = randomHtmlContent + fmt.Sprintf("<%v>random content</%v>", tagName, tagName)
+		randomHtmlContent = randomHtmlContent + fmt.Sprintf(
+			"<%v>random <%v>content</%></%v>", tagName, tagName, tagName, tagName,
+		)
+		randomHtmlContent = randomHtmlContent + fmt.Sprintf(
+			"<%v>random <%v>content<%v><%v /></%v></%v></%v>",
+			tagName, tagName, tagName, tagName, tagName, tagName, tagName,
+		)
+	}
+
+	for _, name := range nameSubSequences {
+		n := string(name)
+		randomContent := "random content"
+		attribWithRandom := n + "=\"" + randomContent + "\""
+		attribWithSelf := n + "=\"" + n + "\""
+
+		cases := map[string]string{
+			"<div " + attribWithSelf + ">":                                            "<div " + attribWithSelf + ">",
+			"<div " + attribWithSelf + " class=\"hello\">":                            "<div " + attribWithSelf + " class=\"hello\">",
+			"<div " + attribWithRandom + " class=\"hello\" " + attribWithRandom + ">": "<div " + attribWithRandom + " class=\"hello\" " + attribWithRandom + ">",
+			"<div class=\"hello\" " + attribWithRandom + " data-hello=\"hello\">":     "<div class=\"hello\" " + attribWithRandom + " data-hello=\"hello\">",
+			"<div class=\"" + n + "\">":                                               "<div class=\"" + n + "\">",
+			"":                                                                        "",
+			// @todo add json value case
+		}
+		testCases = append(testCases, testCase{
+			cases: cases,
+			names: [][]byte{name},
+		})
+	}
+
 	// @todo table-lize this suite
 	// @todo add self closing tag case
 	// @todo add case with self closing tag containing multiple attribs
 	// @todo add case with opening tag containing multiple attribs
+	// @todo add case with attributes containing json values
 	for _, tagName := range nameSubSequences {
 		openTag := fmt.Sprintf("<%s>", tagName)
 		closeTag := fmt.Sprintf("</%s>", tagName)
