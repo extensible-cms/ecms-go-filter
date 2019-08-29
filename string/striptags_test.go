@@ -38,32 +38,51 @@ func TestGetStripHtmlTags(t *testing.T) {
 
 	testCases := make([]testCase, 0)
 
-	makeHtmlStr := func(s string) string {
+	/*makeHtmlStr := func(s string) string {
 		return fmt.Sprintf(
 			"<!DOCTYPE html><html><head><title>Random Markup</title></head><body>%v</body></html>", s,
 		)
 	}
+	*/
 
 	randomHtmlContent := ""
+	randomContent := "Random content."
 
 	for _, tagName := range []string{"a", "b", "p", "i"} {
 		randomHtmlContent = randomHtmlContent + fmt.Sprintf("<%v>random content</%v>", tagName, tagName)
 		randomHtmlContent = randomHtmlContent + fmt.Sprintf(
-			"<%v>random <%v>content</%></%v>", tagName, tagName, tagName, tagName,
+			"<%v>random <%v>content</%v></%v>", tagName, tagName, tagName, tagName,
 		)
 		randomHtmlContent = randomHtmlContent + fmt.Sprintf(
-			"<%v>random <%v>content<%v><%v /></%v></%v></%v>",
+			"<%v>random <%v>content{{deepInContent}}<%v><%v /></%v></%v></%v>",
 			tagName, tagName, tagName, tagName, tagName, tagName, tagName,
 		)
 	}
 
 	for _, name := range nameSubSequences {
 		n := string(name)
-		randomContent := "random content"
+		openTag := fmt.Sprintf("<%s>", name)
+		closeTag := fmt.Sprintf("</%s>", name)
+		tagWithEmptyContent := fmt.Sprintf("<%s></%s>", name, name)
+		tagWithContent := fmt.Sprintf("<%s>%s</%s>", name, randomHtmlContent, name)
+		tagWithAndSurroundingContent := fmt.Sprintf("%s<%s>%s</%s>%s", randomHtmlContent, name, randomHtmlContent, name, randomHtmlContent)
+
 		attribWithRandom := n + "=\"" + randomContent + "\""
 		attribWithSelf := n + "=\"" + n + "\""
+		selfClosingTag := fmt.Sprintf("<%s />", name)
+		selfClosingTagWithAttribs := fmt.Sprintf("<%s %s %s %s %s />", "data-hi=\"hola\"", 
+			name, attribWithRandom, attribWithSelf, "class=\"hello-world\"",
+		)
 
 		cases := map[string]string{
+			openTag: "",
+			closeTag: "",
+			tagWithEmptyContent: "",
+			tagWithContent: randomHtmlContent,
+			tagWithAndSurroundingContent: randomHtmlContent + randomHtmlContent + randomHtmlContent,
+
+			selfClosingTagWithAttribs: "",
+			selfClosingTag: "",
 			"<div " + attribWithSelf + ">":                                            "<div " + attribWithSelf + ">",
 			"<div " + attribWithSelf + " class=\"hello\">":                            "<div " + attribWithSelf + " class=\"hello\">",
 			"<div " + attribWithRandom + " class=\"hello\" " + attribWithRandom + ">": "<div " + attribWithRandom + " class=\"hello\" " + attribWithRandom + ">",
@@ -86,7 +105,6 @@ func TestGetStripHtmlTags(t *testing.T) {
 	for _, tagName := range nameSubSequences {
 		openTag := fmt.Sprintf("<%s>", tagName)
 		closeTag := fmt.Sprintf("</%s>", tagName)
-		randomContent := "random content"
 
 		// Random orderings of start, close and content nodes for our markup
 		htmlCases := ecmsGoFilter.StrSliceSubSequences([]string{
