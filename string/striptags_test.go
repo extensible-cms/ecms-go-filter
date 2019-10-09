@@ -3,29 +3,31 @@ package string
 import (
 	"bytes"
 	"fmt"
-	ecmsGoFilter "github.com/extensible-cms/ecms-go-filter"
 	bytes2 "github.com/extensible-cms/ecms-go-filter/bytes"
-	"strings"
+	"regexp"
 	"testing"
 )
 
 var nameSubSequences [][]byte
 
+// Generate a set of subsequences for given valid html tag names and valid html attributes (used by
+// 	`TestStripHtmlTags` and `TestStripHtmlAttribs`).
 func init() {
+	// Capture subsequences here
 	nameSubSequences = make([][]byte, 0)
+
+
+ 	rx := regexp.MustCompile("(:?(^[\\-:_])|([\\-:_]$))")
 
 	// Ensure only valid names are entered into names list
 	for _, name := range bytes2.SubSequences([]byte("a-b_c:d")) { // subsequences for valid html names
-		nameLastInd := len(name) - 1
-		if len(name) == 0 ||
-			bytes.Index(name, []byte{'-'}) == 0 || // skip on names starting with non-alpha-char
-			bytes.Index(name, []byte{'_'}) == 0 || // ""
-			bytes.Index(name, []byte{':'}) == 0 || // ""
-			bytes.Index(name, []byte{'-'}) == nameLastInd || // skip on names ending with non-alpha-char
-			bytes.Index(name, []byte{'_'}) == nameLastInd || //
-			bytes.Index(name, []byte{':'}) == nameLastInd { //
+
+		// If empty name or invalid name start or end skip
+		if len(name) == 0 || rx.Match(name) {
 			continue
 		}
+
+		// Push name into captured names
 		nameSubSequences = append(nameSubSequences, name)
 	}
 }
@@ -38,17 +40,12 @@ func TestGetStripHtmlTags(t *testing.T) {
 
 	testCases := make([]testCase, 0)
 
-	/*makeHtmlStr := func(s string) string {
-		return fmt.Sprintf(
-			"<!DOCTYPE html><html><head><title>Random Markup</title></head><body>%v</body></html>", s,
-		)
-	}
-	*/
-
+	// Random content to reuse in our test case permutations
 	randomHtmlContent := ""
 	randomContent := "Random content."
 
-	for _, tagName := range []string{"a", "b", "p", "i"} {
+	// For random tag name create `random html markup and content`
+	for _, tagName := range []string{"form", "input", "p", "i"} {
 		randomHtmlContent = randomHtmlContent + fmt.Sprintf("<%v>random content</%v>", tagName, tagName)
 		randomHtmlContent = randomHtmlContent + fmt.Sprintf(
 			"<%v>random <%v>content</%v></%v>", tagName, tagName, tagName, tagName,
@@ -59,30 +56,36 @@ func TestGetStripHtmlTags(t *testing.T) {
 		)
 	}
 
+	// For each in name subsequences create a test case
 	for _, name := range nameSubSequences {
 		n := string(name)
 		openTag := fmt.Sprintf("<%s>", name)
 		closeTag := fmt.Sprintf("</%s>", name)
-		tagWithEmptyContent := fmt.Sprintf("<%s></%s>", name, name)
-		tagWithContent := fmt.Sprintf("<%s>%s</%s>", name, randomHtmlContent, name)
-		tagWithAndSurroundingContent := fmt.Sprintf("%s<%s>%s</%s>%s", randomHtmlContent, name, randomHtmlContent, name, randomHtmlContent)
+		openTagWithAttribsAndSelf := fmt.Sprintf("<%s data-hello=\"world\" class=\"%s\">", name, name)
+		openTagWithAttribs := fmt.Sprintf("<%s data-hello=\"world\" class=\"some-class-here\">", name)
+		tagWithEmptyContent := openTag + closeTag
+		tagWithContent := openTag + randomHtmlContent + closeTag
+		tagWithAndSurroundingContent := randomHtmlContent + openTag + randomHtmlContent + closeTag + randomHtmlContent
 
 		attribWithRandom := n + "=\"" + randomContent + "\""
 		attribWithSelf := n + "=\"" + n + "\""
-		selfClosingTag := fmt.Sprintf("<%s />", name)
-		selfClosingTagWithAttribs := fmt.Sprintf("<%s %s %s %s %s />", "data-hi=\"hola\"", 
-			name, attribWithRandom, attribWithSelf, "class=\"hello-world\"",
-		)
+		//selfClosingTag := fmt.Sprintf("<%s />", name)
+		//selfClosingTagWithAttribs := fmt.Sprintf("<%s %s %s %s %s />", "data-hi=\"hola\"",
+		//	name, attribWithRandom, attribWithSelf, "class=\"hello-world\"",
+		//)
 
+		// Individual test case for current tag-name case
 		cases := map[string]string{
 			openTag: "",
+			openTagWithAttribs: "",
+			openTagWithAttribsAndSelf: "",
 			closeTag: "",
 			tagWithEmptyContent: "",
 			tagWithContent: randomHtmlContent,
 			tagWithAndSurroundingContent: randomHtmlContent + randomHtmlContent + randomHtmlContent,
 
-			selfClosingTagWithAttribs: "",
-			selfClosingTag: "",
+			//selfClosingTagWithAttribs: "",
+			//selfClosingTag: "",
 			"<div " + attribWithSelf + ">":                                            "<div " + attribWithSelf + ">",
 			"<div " + attribWithSelf + " class=\"hello\">":                            "<div " + attribWithSelf + " class=\"hello\">",
 			"<div " + attribWithRandom + " class=\"hello\" " + attribWithRandom + ">": "<div " + attribWithRandom + " class=\"hello\" " + attribWithRandom + ">",
@@ -91,35 +94,27 @@ func TestGetStripHtmlTags(t *testing.T) {
 			"":                                                                        "",
 			// @todo add json value case
 		}
+
+		// Append test case to test cases
 		testCases = append(testCases, testCase{
 			cases: cases,
 			names: [][]byte{name},
 		})
 	}
 
-	// @todo table-lize this suite
 	// @todo add self closing tag case
 	// @todo add case with self closing tag containing multiple attribs
-	// @todo add case with opening tag containing multiple attribs
 	// @todo add case with attributes containing json values
-	for _, tagName := range nameSubSequences {
-		openTag := fmt.Sprintf("<%s>", tagName)
-		closeTag := fmt.Sprintf("</%s>", tagName)
+	// Walk through the test cases
+	for _, tc := range testCases {
+		for subject, expected := range tc.cases {
 
-		// Random orderings of start, close and content nodes for our markup
-		htmlCases := ecmsGoFilter.StrSliceSubSequences([]string{
-			openTag, closeTag, randomContent,
-		})
-
-		for _, htmlCase := range htmlCases {
-			joinedHtml := strings.Join(htmlCase, "")
-			testName := fmt.Sprintf("GetStripHtmlTags(%s)(%s)",
-				tagName, joinedHtml,
-			)
+			// Get test cases 'set' name
+			testName := fmt.Sprintf("GetStripHtmlTags(%s)(%s)", tc.names, subject)
 
 			t.Run(testName, func(t2 *testing.T) {
-				f := GetStripHtmlTags([][]byte{tagName})
-				result := f(joinedHtml)
+				f := GetStripHtmlTags(tc.names)
+				result := f(subject).([]byte)
 
 				t2.Run("Expect `Filter` function", func(t3 *testing.T) {
 					if f == nil {
@@ -127,16 +122,16 @@ func TestGetStripHtmlTags(t *testing.T) {
 					}
 				})
 
-				t2.Run(fmt.Sprintf("Expect tags %s, %s removed", openTag, closeTag), func(t3 *testing.T) {
-					for _, htmlTag := range []string{openTag, closeTag} {
-						if bytes.Index(result.([]byte), []byte(htmlTag)) >= 0 {
-							t3.Errorf("Expected result not to contain removed tag %s;  Received %s", htmlTag, result)
-						}
+				t2.Run(fmt.Sprintf("Expect %s", result), func(t3 *testing.T) {
+					if false == bytes.Equal(result, []byte(expected)) {
+						t3.Errorf("\nExpected \n%s;\nReceived: \n%s", expected, result)
+						t3.Logf("Result length: %v\n", len(result))
 					}
 				})
 
-			}) // html cases loop
-		}
+			}) // cases loop
+
+		} // sub test-cases map loop
 
 	} // test cases loop
 }

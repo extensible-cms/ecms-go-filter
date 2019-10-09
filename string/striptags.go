@@ -136,6 +136,9 @@ func createAttribRegexPartial(attribName []byte) []byte {
 	)
 }
 
+// GetStipHtmlTags returns a filter function that can be used to stip specific html tags from content containing
+// html tags/markup.  Note:  Only opening and closing tags are supported;  Self closing tags are not supported;
+// Tags containing attributes that contain json stringified values have, also, not been tested.
 func GetStripHtmlTags(tagNames [][]byte) ecmsGoFilter.Filter {
 	namesAreValid, _ /*invalidNames*/ := validateNames(tagNames)
 	if !namesAreValid {
